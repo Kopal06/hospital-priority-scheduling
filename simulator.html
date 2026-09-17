@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMQ Scheduler — Live Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .sim-grid{ display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start; margin-top:8px; }
+  .sim-grid > .sim-left{ flex:1 1 340px; max-width:380px; }
+  .sim-grid > .sim-right{ flex:2 1 480px; min-width:0; }
+  .now-running{ display:flex; align-items:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+  .now-running .tick{ color:var(--text-faint); font-size:12px; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <div class="nav-brand"><span class="dot"></span> AMQ Scheduler</div>
+    <div class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="simulator.html" class="active">Live Simulator</a>
+      <a href="architecture.html">Architecture</a>
+      <a href="results.html">Results</a>
+    </div>
+  </nav>
+</header>
+
+<main class="page">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin:32px 0 6px; flex-wrap:wrap; gap:10px;">
+    <h1 style="font-size:26px;">Live Simulator</h1>
+    <div class="status-pill" id="statusPill">IDLE</div>
+  </div>
+  <p style="max-width:620px; margin-bottom:10px;">Build a workload by hand or load a preset, then run it tick by tick and
+    watch the Gantt chart, vitals tiles, and aging promotions update live.</p>
+
+  <div class="sim-grid">
+    <!-- LEFT: intake -->
+    <div class="sim-left">
+      <div class="card">
+        <h2>Task queue</h2>
+        <div id="taskList"></div>
+        <div class="add-form">
+          <div class="full">
+            <label>Process name</label>
+            <input id="fName" type="text" placeholder="e.g. ICU Monitor - Bed 6" />
+          </div>
+          <div>
+            <label>Queue</label>
+            <select id="fQueue">
+              <option value="0">Emergency</option>
+              <option value="1" selected>Interactive</option>
+              <option value="2">Background</option>
+            </select>
+          </div>
+          <div>
+            <label>Base priority (0=highest)</label>
+            <input id="fPriority" type="number" value="5" min="0" max="10" />
+          </div>
+          <div>
+            <label>Arrival tick</label>
+            <input id="fArrival" type="number" value="0" min="0" />
+          </div>
+          <div>
+            <label>Burst (ticks)</label>
+            <input id="fBurst" type="number" value="5" min="1" />
+          </div>
+        </div>
+        <div class="btn-row" style="margin-top:14px;">
+          <button class="btn primary" id="btnAdd" style="flex:1">Add task</button>
+        </div>
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn" id="btnPresetHospital" style="flex:1">Hospital demo</button>
+          <button class="btn" id="btnPresetStress" style="flex:1">Stress test</button>
+          <button class="btn" id="btnClear" style="flex:1">Clear</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Run controls</h2>
+        <div class="btn-row">
+          <button class="btn primary" id="btnRun" style="flex:1">▶ Run simulation</button>
+        </div>
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn" id="btnStep" style="flex:1">Step +1 tick</button>
+          <button class="btn" id="btnReset" style="flex:1">Reset</button>
+        </div>
+        <div class="speed-row">
+          <span>Slow</span>
+          <input type="range" id="speedRange" min="1" max="10" value="6">
+          <span>Fast</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: console -->
+    <div class="sim-right">
+      <div class="card">
+        <h2>Live execution — AMQ scheduler</h2>
+        <div class="now-running">
+          <div class="badge q1" id="nowBadge">— idle —</div>
+          <div class="tick" id="tickLabel">t = 0</div>
+        </div>
+        <div class="legend">
+          <span><i class="q0"></i>Emergency</span>
+          <span><i class="q1"></i>Interactive</span>
+          <span><i class="q2"></i>Background</span>
+        </div>
+        <div class="gantt-wrap" id="ganttWrap">
+          <div class="empty-note">Add tasks (or load a preset) and press Run.</div>
+        </div>
+        <div class="tiles" style="margin-top:16px;">
+          <div class="tile"><div class="label">Elapsed</div><div class="value" id="tElapsed">0</div></div>
+          <div class="tile"><div class="label">CPU Util %</div><div class="value" id="tUtil">0</div></div>
+          <div class="tile"><div class="label">Avg Wait</div><div class="value" id="tWait">0</div></div>
+          <div class="tile"><div class="label">Emer. Resp</div><div class="value" id="tEmerg">0</div></div>
+          <div class="tile" id="tileBg"><div class="label">Background</div><div class="value" id="tBg">OK</div></div>
+        </div>
+      </div>
+
+      <div class="card" id="resultsPanel" style="display:none;">
+        <h2>Completed processes (AMQ)</h2>
+        <table class="results" id="resultsTable"></table>
+      </div>
+
+      <div class="card" id="comparePanel" style="display:none;">
+        <h2>AMQ vs. plain FCFS baseline</h2>
+        <div id="compareBars"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>Mirrors backend/amq_scheduler.py: Emergency = preemptive priority, Interactive = Round Robin (4-tick quantum),
+    Background = FCFS with promotion-based aging into Interactive after a configurable wait threshold.</p>
+</footer>
+
+<script src="js/engine.js"></script>
+<script src="js/simulator.js"></script>
+</body>
+</html>
