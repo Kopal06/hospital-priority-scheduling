@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMQ Scheduler — Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <div class="nav-brand"><span class="dot"></span> AMQ Scheduler</div>
+    <div class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="simulator.html">Live Simulator</a>
+      <a href="architecture.html">Architecture</a>
+      <a href="results.html" class="active">Results</a>
+    </div>
+  </nav>
+</header>
+
+<main class="page">
+  <h1 style="font-size:26px; margin:32px 0 10px;">Results &amp; Evaluation</h1>
+  <p style="max-width:640px;">Everything on this page is computed live in your browser — the same engine
+    that runs the dashboard snapshot and the live simulator.</p>
+
+  <div class="card" style="margin-top:24px;">
+    <h2>Hospital demo workload — AMQ vs. plain FCFS</h2>
+    <p style="margin-bottom:16px;">The standard 8-process showcase workload (3 Emergency, 3 Interactive,
+      2 Background), run once under the proposed AMQ scheduler and once under a naive single-queue FCFS baseline.</p>
+    <div id="compareBars"></div>
+    <table class="results" id="demoTable" style="margin-top:20px;"></table>
+  </div>
+
+  <div class="section-head">
+    <h2>Aging-slope sweep</h2>
+    <p>An adversarial workload (continuous Interactive load + 2 long Background jobs) run across many
+      random seeds, comparing three aging configurations. This is the statistically grounded version of
+      the single-example comparison above — it directly tests whether Background jobs starve.</p>
+  </div>
+
+  <div class="card">
+    <div class="btn-row">
+      <button class="btn primary" id="btnRunSweep">▶ Run sweep (20 seeds × 3 configs)</button>
+    </div>
+    <table class="results" id="sweepTable" style="margin-top:20px; display:none;"></table>
+    <p id="sweepNote" style="margin-top:14px; display:none;"></p>
+  </div>
+
+  <div class="btn-row" style="margin:36px 0;">
+    <a class="btn ghost" href="simulator.html">← Back to live simulator</a>
+    <a class="btn ghost" href="architecture.html">Read the architecture →</a>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>Mirrors backend/experiments.py — 20 seeds × 3 aging configurations, run client-side with a seeded PRNG.</p>
+</footer>
+
+<script src="js/engine.js"></script>
+<script src="js/results.js"></script>
+</body>
+</html>
