@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMQ Scheduler — Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <div class="nav-brand"><span class="dot"></span> AMQ Scheduler</div>
+    <div class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="simulator.html">Live Simulator</a>
+      <a href="architecture.html" class="active">Architecture</a>
+      <a href="results.html">Results</a>
+    </div>
+  </nav>
+</header>
+
+<main class="page">
+  <h1 style="font-size:26px; margin:32px 0 10px;">Architecture &amp; Methodology</h1>
+  <p style="max-width:640px;">How the Adaptive Multilevel Queue scheduler classifies work, scores priority,
+    ages long-waiting tasks, and decides what runs next on every tick.</p>
+
+  <div class="card" style="margin-top:24px;">
+    <h2>Queue classification &amp; policies</h2>
+    <table class="queue-policy-table">
+      <tr><th>Queue</th><th>Example workloads</th><th>Scheduling policy</th><th>Objective</th></tr>
+      <tr>
+        <td><span class="queue-tag q0">Emergency</span></td>
+        <td>ECG alerts, ICU monitors, code-blue signals</td>
+        <td>Preemptive Priority</td>
+        <td>Immediate CPU access, lowest possible response time</td>
+      </tr>
+      <tr>
+        <td><span class="queue-tag q1">Interactive</span></td>
+        <td>Doctor dashboards, EMR lookups, nurse charting</td>
+        <td>Round Robin (4-tick quantum)</td>
+        <td>Fair, responsive time-sharing for clinician-facing UI</td>
+      </tr>
+      <tr>
+        <td><span class="queue-tag q2">Background</span></td>
+        <td>Billing batches, nightly backups, reports</td>
+        <td>FCFS + promotion-based aging</td>
+        <td>Best-effort throughput without blocking clinical work</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section-head">
+    <h2>Per-tick workflow</h2>
+    <p>Every simulated tick runs through the same eight-step pipeline.</p>
+  </div>
+
+  <div class="card">
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <div class="content">
+          <h3>Arrival &amp; classification</h3>
+          <p>Each new process is tagged Emergency / Interactive / Background based on the
+            clinical role of the application that spawned it.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <div class="content">
+          <h3>Per-tick scan</h3>
+          <p>The scheduler checks the Emergency queue first. If it's non-empty, the
+            highest-priority emergency process is selected unconditionally.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <div class="content">
+          <h3>Dynamic priority scoring</h3>
+          <p>Within a queue, processes are scored by base priority, waiting time, and
+            recent CPU usage — see the formula below.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">4</div>
+        <div class="content">
+          <h3>Aging &amp; promotion</h3>
+          <p>A Background process that has waited past a configurable threshold is
+            promoted into the Interactive queue, where it competes fairly via Round
+            Robin instead of waiting for total CPU idleness.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">5</div>
+        <div class="content">
+          <h3>Preemption check</h3>
+          <p>If an Emergency task becomes ready while something else is running, that
+            task is preempted immediately — no penalty — and placed back at the head
+            of its own queue.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">6</div>
+        <div class="content">
+          <h3>Dispatch &amp; execution</h3>
+          <p>The chosen process runs for one tick, or until its Round-Robin quantum
+            (or a preemption) ends the slice.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">7</div>
+        <div class="content">
+          <h3>Bookkeeping &amp; requeue</h3>
+          <p>Waiting time, turnaround time, and response time counters update; the
+            process is requeued per its own policy.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="num">8</div>
+        <div class="content">
+          <h3>Completion</h3>
+          <p>When remaining burst time reaches zero, completion time is recorded and
+            the process is removed from the run queue permanently.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2>Dynamic priority formula</h2>
+    <p>Balances clinical urgency, fairness, and system efficiency.</p>
+  </div>
+
+  <div class="card">
+    <div class="formula-box"><span class="comment">effective_priority(p, now) =</span><br>
+&nbsp;&nbsp;p.base_priority<br>
+&nbsp;&nbsp;- aging_slope[p.queue] * (now - p.waiting_since) &nbsp;&nbsp;<span class="comment">// aging bonus</span><br>
+&nbsp;&nbsp;+ 0.1 * recent_cpu_usage(p) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">// CPU-hog penalty</span><br>
+<br>
+<span class="comment">// Lower effective_priority => scheduled sooner</span><br>
+<span class="comment">// aging_slope: Emergency = 0, Interactive = 0.5, Background = 0.2</span></div>
+    <p style="margin-top:16px;">Emergency's aging slope is intentionally <strong>zero</strong> — clinical
+      severity, not wait time, governs ordering among emergencies. A background task that
+      waits past <code>8 / aging_slope</code> ticks is promoted into Interactive, which is
+      what actually prevents starvation (the score alone only affects ordering
+      <em>within</em> a queue).</p>
+  </div>
+
+  <div class="section-head">
+    <h2>Design rationale</h2>
+  </div>
+  <div class="grid cols-2">
+    <div class="feature-card">
+      <h3>Why preemptive priority for Emergency?</h3>
+      <p>Clinical alerts have hard implicit deadlines — any queuing delay is a
+        patient-safety risk, so Emergency work must interrupt anything else instantly.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Why Round Robin for Interactive?</h3>
+      <p>Clinicians perceive responsiveness, not raw throughput, when using dashboards
+        and EMR — short time slices keep the UI feeling live.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Why FCFS for Background?</h3>
+      <p>These jobs are long and non-interactive; they only need to make forward
+        progress without interfering with clinical flows.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Why is aging scoped to Background only?</h3>
+      <p>So a flood of low-priority tasks can never accumulate enough "aged" priority
+        to delay a genuine Emergency alert — patient safety always wins.</p>
+    </div>
+  </div>
+
+  <div class="btn-row" style="margin:36px 0;">
+    <a class="btn primary" href="simulator.html">▶ Try it in the live simulator</a>
+    <a class="btn ghost" href="results.html">See the results →</a>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>Mirrors backend/amq_scheduler.py exactly — the same engine (js/engine.js) powers this page's
+    diagrams-in-prose and the live simulator.</p>
+</footer>
+
+</body>
+</html>
