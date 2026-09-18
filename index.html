@@ -6,7 +6,7 @@
 <title>AMQ Scheduler — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="frontend/css/style.css">
 </head>
 <body>
 
@@ -15,9 +15,9 @@
     <div class="nav-brand"><span class="dot"></span> AMQ Scheduler</div>
     <div class="nav-links">
       <a href="index.html" class="active">Dashboard</a>
-      <a href="simulator.html">Live Simulator</a>
-      <a href="architecture.html">Architecture</a>
-      <a href="results.html">Results</a>
+      <a href="frontend/simulator.html">Live Simulator</a>
+      <a href="frontend/architecture.html">Architecture</a>
+      <a href="frontend/results.html">Results</a>
     </div>
   </nav>
 </header>
@@ -34,8 +34,8 @@
       administrative work never starves.
     </p>
     <div class="btn-row" style="margin-top:26px;">
-      <a class="btn primary" href="simulator.html">▶ Open live simulator</a>
-      <a class="btn ghost" href="architecture.html">View architecture →</a>
+      <a class="btn primary" href="frontend/simulator.html">▶ Open live simulator</a>
+      <a class="btn ghost" href="frontend/architecture.html">View architecture →</a>
     </div>
   </section>
 
@@ -91,19 +91,19 @@
       <h3>Live Simulator</h3>
       <p>Build your own workload, run it tick by tick, and watch the Gantt chart,
         vitals tiles, and aging promotions update live.</p>
-      <div class="btn-row" style="margin-top:16px;"><a class="btn" href="simulator.html">Open →</a></div>
+      <div class="btn-row" style="margin-top:16px;"><a class="btn" href="frontend/simulator.html">Open →</a></div>
     </div>
     <div class="feature-card">
       <h3>Architecture</h3>
       <p>The full per-tick workflow: classification, dynamic priority scoring,
         aging, preemption, and dispatch — explained step by step.</p>
-      <div class="btn-row" style="margin-top:16px;"><a class="btn" href="architecture.html">Open →</a></div>
+      <div class="btn-row" style="margin-top:16px;"><a class="btn" href="frontend/architecture.html">Open →</a></div>
     </div>
     <div class="feature-card">
       <h3>Results</h3>
       <p>AMQ vs. FCFS comparison charts, plus a live aging-slope sweep across
         many random seeds proving the starvation guarantee.</p>
-      <div class="btn-row" style="margin-top:16px;"><a class="btn" href="results.html">Open →</a></div>
+      <div class="btn-row" style="margin-top:16px;"><a class="btn" href="frontend/results.html">Open →</a></div>
     </div>
   </div>
 
@@ -114,7 +114,7 @@
     Runs entirely client-side, nothing is sent anywhere.</p>
 </footer>
 
-<script src="js/engine.js"></script>
-<script src="js/dashboard.js"></script>
+<script src="frontend/js/engine.js"></script>
+<script src="frontend/js/dashboard.js"></script>
 </body>
 </html>
