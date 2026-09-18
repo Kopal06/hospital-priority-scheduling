@@ -39,7 +39,7 @@ document.getElementById('btnAdd').addEventListener('click', () => {
 document.getElementById('btnClear').addEventListener('click', () => { userTasks = []; renderTaskList(); resetRun(); });
 
 document.getElementById('btnPresetHospital').addEventListener('click', () => {
-  userTasks = HOSPITAL_DEMO_WORKLOAD.map(t => ({ ...t }));
+  userTasks = HOSPITAL_DEMO_WORKLOAD.map(t => Object.assign({}, t));
   renderTaskList(); resetRun();
 });
 
